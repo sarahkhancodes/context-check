@@ -1,15 +1,37 @@
 
-CHARS_PER_TOKEN = 4
-PRICE_PER_MILLION_TOKENS = 3.00
+import requests
+import json
+def load_text(source):
+    if source.startswith(("http://", "https://")):
+        response = requests.get(source, timeout=10)
+        response.raise_for_status()
+        return response.text
+    else:
+        with open(source, "r", encoding="utf-8") as file:
+            return file.read()
 
-text = input("Paste some text: ")
 
-chars = len(text)
-words = len(text.split())
-tokens = round(chars / CHARS_PER_TOKEN)
-cost = tokens / 1_000_000 * PRICE_PER_MILLION_TOKENS
 
-print(f"Characters: {chars}")
-print(f"Words: {words}")
-print(f"Estimated tokens: {tokens}")
-print(f"Estimated cost: ${cost:.6f}")
+try:
+    text = load_text("sample.txt")
+
+    chars = len(text)
+    words = len(text.split())
+    tokens = round(chars / 4)
+
+    report = {
+        "characters": chars,
+        "words": words,
+        "estimated_tokens": tokens,
+        "fits_small_8k": tokens <= 8000
+    }
+
+    with open("report.json", "w", encoding="utf-8") as file:
+        json.dump(report, file, indent=2)
+
+    print("Report saved successfully!")
+
+except FileNotFoundError:
+    print("Error: File nahi mili. Please filename check karein.")
+
+
