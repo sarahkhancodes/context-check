@@ -1,6 +1,10 @@
 import sys
 import requests
 import json
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
 def load_text(source):
     if source.startswith(("http://", "https://")):
         response = requests.get(source, timeout=10)
@@ -9,6 +13,44 @@ def load_text(source):
     else:
         with open(source, "r", encoding="utf-8") as file:
             return file.read()
+
+
+# Example prices from Edversity course PDF
+# USD per 1 million tokens: (input, output)
+
+PRICES = {
+    "gemini-4-hydrogen": (1.50, 7.50),
+    "gemini-3.5-flash-lite": (0.30, 2.50),
+    "gpt-5-nano": (0.05, 0.40),
+    "claude-haiku-5-5": (0.10, 0.50),
+}
+
+
+        
+def summarise(client, model, text):
+    prompt = (
+        "Summarise this document in 5 short bullet points.\n\n"
+        f"<document>\n{text}\n</document>"
+    )
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    return response.choices[0].message.content, response.usage
+
+
+def cost_of(model, usage):
+    price_in, price_out = PRICES.get(model, (0.0, 0.0))
+
+    return (
+        usage.prompt_tokens * price_in
+        + usage.completion_tokens * price_out
+    ) / 1_000_000
+
 
 def estimate_cost(tokens):
     price_per_million = 3
@@ -55,6 +97,31 @@ try:
         json.dump(report, file, indent=2)
 
     print("Report saved successfully!")
+
+
+    # Step 4: AI Summary and Real Token Cost
+
+    load_dotenv()
+
+    client = OpenAI(
+        api_key=os.environ["LLM_API_KEY"],
+        base_url=os.environ["LLM_BASE_URL"]
+    )
+
+    model = os.environ["LLM_MODEL"]
+
+    summary, usage = summarise(client, model, text)
+
+    print(f"\nSummary from {model}:")
+    print(summary)
+
+    print(
+        f"Real tokens: {usage.prompt_tokens:,} in · "
+        f"{usage.completion_tokens:,} out"
+    )
+
+    print(f"Real cost: ${cost_of(model, usage):.4f}")
+
 
 except FileNotFoundError:
     print("Error: File nahi mili. Please filename check karein.")
