@@ -178,6 +178,13 @@ try:
         answer = reply.choices[0].message.content
         print("AI:", answer)
 
+
+        if reply.usage:
+            print("Input tokens:", reply.usage.prompt_tokens)
+            print("Output tokens:", reply.usage.completion_tokens)
+            print(f"Estimated cost: ${cost_of(model, reply.usage):.6f}")
+
+
         messages.append({"role": "assistant", "content": answer})
 
         messages.append({"role": "assistant", "content": answer})
