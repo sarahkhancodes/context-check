@@ -1,1 +1,4 @@
 I am learning AI Engineering step by step.
+I am learning Python programming.
+Python is used to build AI applications.
+My goal is to create my own AI assistant.
